@@ -1,0 +1,26 @@
+---
+- name: "Create SUDO group '{{ sudo_group }}'"
+  group:
+    name: "{{ sudo_group }}"
+    state: present
+
+- name: "Allow '{{ sudo_group }}' group to have passwordless sudo"
+  lineinfile:
+    dest: /etc/sudoers
+    regexp: '^%{{ sudo_group }}'
+    line: "%{{ sudo_group }}        ALL=(ALL)       NOPASSWD: ALL"
+    validate: 'visudo -cf %s'
+
+- name: "Create '{{ admin_user }}' user"
+  user:
+    name: "{{ admin_user }}"
+    group: "{{ sudo_group }}"
+    uid: "{{ admin_user_uid }}"
+#    password: "{{ admin_user_password }}"
+    state: present
+
+- name: "Add SSH public key to '{{ admin_user }}' user"
+  authorized_key:
+    user: "{{ admin_user }}"
+    state: present
+    key: "{{ lookup ('file', ssh_public_key ) }}"

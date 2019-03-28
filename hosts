@@ -1,0 +1,13 @@
+[all:children]
+hypervisors
+
+[all:vars]
+ansible_user=admin
+ansible_become=true
+
+[hypervisors]
+192.168.88.97 # hypervisro_network=192.168.126.0/26
+#192.168.88.241 hypervisor_network=192.168.126.64/26
+
+[hypervisors:vars]
+hypervisor_network=192.168.124.0/22

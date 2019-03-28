@@ -1,0 +1,50 @@
+---
+- name: Check KVM device file
+  file:
+    path: /dev/kvm
+    owner: root
+    group: kvm
+    mode: 0660
+
+- name: "Install packages for Virtualization"
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+  - libvirt
+  - libvirt-devel
+  - libvirt-daemon-kvm
+  - qemu-kvm
+  - "{{ 'python3-firewall' if ansible_distribution == 'Fedora' else 'python-firewall' }}"
+
+- name: "Enable and start LibvirtD service"
+  service:
+    name: libvirtd
+    state: started
+    enabled: true
+
+- name: "Allow 'wheel' group manage Libvirt daemon"
+  copy:
+    src: 80-libvirt.rules
+    dest: /etc/polkit-1/rules.d
+
+- name: "Allow IP forwarding"
+  copy:
+    content: "net.ipv4.ip_forward = 1"
+    dest: /etc/sysctl.d/90-ipforward.conf
+  notify:
+  - apply_sysctl
+
+- name: "Manage Firewall Rules"
+  firewalld:
+    source: "{{ hypervisor_network }}"
+    port: 16509/tcp
+    permanent: yes
+    state: enabled
+
+- name: "Check Libvirt pool"
+  shell: |
+    virsh pool-list | grep default
+  register: pool_list
+
+- debug: var=pool_list

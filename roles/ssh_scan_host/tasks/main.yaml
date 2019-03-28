@@ -1,0 +1,31 @@
+---
+- name: Fetch Host SSH fingerprints
+  local_action: shell ssh-keyscan {{ ssh_host }}
+  register: ssh_fingerprint
+
+#- debug: var=ssh_fingerprint
+#- debug: var=ssh_fingerprint.stdout_lines
+#- debug: var=ssh_known_hosts_file
+
+- name: "Check file {{ ssh_known_hosts_file }} exist"
+  stat:
+    path: "{{ ssh_known_hosts_file }}"
+  register: stat_result
+  
+- name: "Remove old SSH Fingerprint from {{ ssh_known_hosts_file }}"
+  shell: |
+    addr=$(echo {{ item }} | awk '{ print $1; }')
+    sed -ci.bak1 "/$addr/d" {{ ssh_known_hosts_file }}
+  when:
+  - stat_result.stat.exists
+  with_items:
+  - "{{ ssh_fingerprint.stdout_lines | list }}"
+
+- name: "Insert SSH Fingerprint to {{ ssh_known_hosts_file }}"
+  lineinfile:
+    path: "{{ ssh_known_hosts_file }}"
+    create: yes
+    line: "{{ item }}"
+    insertafter: EOF
+  with_items:
+  - "{{ ssh_fingerprint.stdout_lines | list }}"

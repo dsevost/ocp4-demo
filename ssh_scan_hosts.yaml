@@ -1,0 +1,11 @@
+- hosts: localhost
+  connection: local
+  vars:
+    scan_hosts: "{{ groups['hypervisors'] }}"
+    ssh_known_hosts_file: ~/.ssh/known_hosts
+  tasks:
+  - include_role:
+      name: ssh_scan_host
+    loop: "{{ scan_hosts }}"
+    loop_control:
+      loop_var: ssh_host

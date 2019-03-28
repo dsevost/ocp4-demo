@@ -1,0 +1,5 @@
+---
+- hosts: hypervisors
+  gather_facts: yes
+  roles:
+  - libvirt
