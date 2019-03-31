@@ -1,0 +1,6 @@
+libvirtd_conf: /etc/libvirt/libvirtd.conf
+libvirtd_opts: /etc/sysconfig/libvirtd
+libvirtd_listen_addr: "0.0.0.0"
+libvirtd_listen_port: "16509"
+real_network: 192.168.126.0/24
+hypervisor_bridge: tt0

@@ -1,3 +1,8 @@
 ---
 - name: apply_sysctl
   command: sysctl -p
+
+- name: libvirtd_service
+  service:
+    name: libvirtd
+    state: restarted

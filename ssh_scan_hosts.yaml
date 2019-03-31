@@ -1,6 +1,7 @@
 - hosts: localhost
   connection: local
   vars:
+    ansible_become: false
     scan_hosts: "{{ groups['hypervisors'] }}"
     ssh_known_hosts_file: ~/.ssh/known_hosts
   tasks:

@@ -8,7 +8,23 @@
     admin_user_uid: 901
     ssh_public_key: ~/.ssh/id_rsa.pub
   vars_prompt:
-  - name: remote_user_password
+  - name: ansible_password
     prompt: "Enter Root password for remote host"
-  roles:
-  - add_sudo_user
+
+  tasks:
+
+  - name: "Check SSH keys is present"
+    local_action: stat path="{{ ssh_public_key }}"
+    vars:
+      ansible_become: false
+    register: ssh_public_key_exists
+    run_once: true
+
+  - fail:
+      msg: "Please generate SSH key pair with command: ssh-keygen -N '' -C ''"
+    run_once: true
+    when:
+    - ssh_public_key_exists.stat.exists == False
+
+  - include_role:
+      name: add_sudo_user

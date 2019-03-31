@@ -4,10 +4,16 @@ hypervisors
 [all:vars]
 ansible_user=admin
 ansible_become=true
+ansible_python_interpreter=/usr/bin/python3
 
 [hypervisors]
-192.168.88.97 # hypervisro_network=192.168.126.0/26
-#192.168.88.241 hypervisor_network=192.168.126.64/26
+192.168.1.72 hypervisor_cidr=192.168.124.1/24
+192.168.1.68 hypervisor_cidr=192.168.125.1/24
 
 [hypervisors:vars]
-hypervisor_network=192.168.124.0/22
+bastion_ip=192.168.1.72
+hypervisor_bridge=ocp4
+openshift_base_domain=dsevosty.info
+openshift_cluster_name=ocp4
+#openshift_apps_domain=apps
+real_network=192.168.124.0/23

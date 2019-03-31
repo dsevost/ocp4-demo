@@ -18,6 +18,7 @@
     uid: "{{ admin_user_uid }}"
 #    password: "{{ admin_user_password }}"
     state: present
+    generate_ssh_key: yes
 
 - name: "Add SSH public key to '{{ admin_user }}' user"
   authorized_key:

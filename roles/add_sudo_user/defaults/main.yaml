@@ -1,0 +1,2 @@
+ssh_key_size: 2048
+ssh_key_type: rsa

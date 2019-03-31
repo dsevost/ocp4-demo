@@ -1,0 +1,4 @@
+#openshift_installer_source_local_dir: "{{ lookup('env','HOME') }}/git/openshift-installer"
+openshift_installer_source_local_dir: "git/openshift-installer"
+openshift_installer_source_ref: "master"
+openshift_installer_source_repo: "https://github.com/openshift/installer"

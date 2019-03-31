@@ -14,6 +14,7 @@
   - libvirt
   - libvirt-devel
   - libvirt-daemon-kvm
+  - libxml2
   - qemu-kvm
   - "{{ 'python3-firewall' if ansible_distribution == 'Fedora' else 'python-firewall' }}"
 
@@ -22,6 +23,50 @@
     name: libvirtd
     state: started
     enabled: true
+  ignore_errors: true
+
+- name: "Disable libvirtd TLS listener"
+  lineinfile:
+    path: "{{ libvirtd_conf }}"
+    regex: "^listen_tls"
+    line: "listen_tls = 0"
+  notify: libvirtd_service
+
+- name: "Enable libvirtd TCP listener"
+  lineinfile:
+    path: "{{ libvirtd_conf }}"
+    regex: "^listen_tcp"
+    line: "listen_tcp = 1"
+  notify: libvirtd_service
+
+#- name: "Enable libvirtd listener on all interfaces"
+#  lineinfile:
+#    path: "{{ libvirtd_conf }}"
+#    regex: "^listen_addr"
+#    line: 'listen_addr = "{{ libvirtd_listen_addr }}"'
+#  notify: libvirtd_service
+
+- name: "Disable libvirtd auth for incoming TCP connection"
+  lineinfile:
+    path: "{{ libvirtd_conf }}"
+    regex: "^auth_tcp"
+    line: 'auth_tcp = "none"'
+  notify: libvirtd_service
+
+- name: "Setup libvirtd TCP port listener"
+  lineinfile:
+    path: "{{ libvirtd_conf }}"
+    regex: "^tcp_port"
+    line: 'tcp_port = "{{ libvirtd_listen_port }}"'
+  notify: libvirtd_service
+
+- name: "Enable libvirtd GLOBAL listener"
+  lineinfile:
+    path: "{{ libvirtd_opts }}"
+    regex: "LIBVIRTD_ARGS="
+    line: 'LIBVIRTD_ARGS="--listen"'
+  notify: libvirtd_service
+
 
 - name: "Allow 'wheel' group manage Libvirt daemon"
   copy:
@@ -37,14 +82,34 @@
 
 - name: "Manage Firewall Rules"
   firewalld:
-    source: "{{ hypervisor_network }}"
+    source: "{{ real_network }}"
     port: 16509/tcp
     permanent: yes
     state: enabled
 
 - name: "Check Libvirt pool"
+  environment:
+    LANG: "en_US"
+  changed_when: false
   shell: |
     virsh pool-list | grep default
   register: pool_list
 
-- debug: var=pool_list
+#- debug: var=pool_list
+
+- block:
+  - name: "Copy pool definition"
+    copy:
+      src: libvirt-default-pool.xml
+      dest: /tmp
+  - name: "Create 'default' pool if needed"
+    shell: |
+      virsh pool define /tmp/libvirt-default-pool.xml
+  when:
+  - pool_list.stdout is not search('default.*active.*yes')
+
+- name: "Install Libvirt Network hook"
+  template:
+    src: network.j2
+    dest: /etc/libvirt/hooks/network
+    mode: 0755
