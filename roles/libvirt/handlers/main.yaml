@@ -6,3 +6,8 @@
   service:
     name: libvirtd
     state: restarted
+
+- name: firewalld_service
+  service:
+    name: firewalld
+    state: reloaded

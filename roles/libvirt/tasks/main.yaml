@@ -86,6 +86,7 @@
     port: 16509/tcp
     permanent: yes
     state: enabled
+  notify: firewalld_service
 
 - name: "Check Libvirt pool"
   environment:
@@ -94,6 +95,7 @@
   shell: |
     virsh pool-list | grep default
   register: pool_list
+  ignore_errors: true
 
 #- debug: var=pool_list
 
@@ -104,9 +106,15 @@
       dest: /tmp
   - name: "Create 'default' pool if needed"
     shell: |
-      virsh pool define /tmp/libvirt-default-pool.xml
+      virsh pool-define /tmp/libvirt-default-pool.xml
+      virsh pool-start default
   when:
   - pool_list.stdout is not search('default.*active.*yes')
+
+- name: "Create Libvirtd Hooks Directory"
+  file:
+    path: /etc/libvirt/hooks
+    state: directory
 
 - name: "Install Libvirt Network hook"
   template:

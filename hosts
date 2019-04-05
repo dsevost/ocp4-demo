@@ -9,11 +9,18 @@ ansible_python_interpreter=/usr/bin/python3
 [hypervisors]
 192.168.1.72 hypervisor_cidr=192.168.124.1/24
 192.168.1.68 hypervisor_cidr=192.168.125.1/24
+#master01 hypervisor_cidr=192.168.128.1/24
+#master02 hypervisor_cidr=192.168.129.1/24
+#infra01 hypervisor_cidr=192.168.130.1/24
+#node01 hypervisor_cidr=192.168.131.1/24
+#node02 hypervisor_cidr=192.168.132.1/24
 
 [hypervisors:vars]
 bastion_ip=192.168.1.72
+#bastion_ip=172.17.7.242
 hypervisor_bridge=ocp4
 openshift_base_domain=dsevosty.info
 openshift_cluster_name=ocp4
 #openshift_apps_domain=apps
-real_network=192.168.124.0/23
+real_network=192.168.124.0/22
+#real_network=192.168.128.0/21
