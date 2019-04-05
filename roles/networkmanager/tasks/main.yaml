@@ -10,7 +10,7 @@
     dest: /etc/NetworkManager/dnsmasq.d/openshift.conf
   notify: networkmanager_service
 
-- name: "Configure NetworkMnaager to use dnsmasq"
+- name: "Configure NetworkManager to use dnsmasq"
   copy:
     content: |
       [main]

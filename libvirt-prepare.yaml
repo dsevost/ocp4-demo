@@ -1,11 +1,12 @@
 ---
 - hosts: hypervisors
   gather_facts: yes
-  tasks:
-  - include_role:
-      name: libvirt
-  - include_role:
-      name: networkmanager
-  - include_role:
-      name: openshift_installer_build
-    run_once: true
+  roles:
+  - nfs
+  - libvirt
+  - networkmanager
+
+- hosts: bastion
+  gather_facts: yes
+  roles:
+  - openshift_installer_build

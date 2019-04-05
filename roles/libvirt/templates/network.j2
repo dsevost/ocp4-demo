@@ -20,6 +20,11 @@ if [ "$2" == "started" -a "$3" == "begin" -a "$OCP_BRIDGE" == "$BRIDGE" ] ; then
     /sbin/iptables -t nat -I POSTROUTING 2 -s $BASTION -d $NETWORKS -j ACCEPT
     /sbin/iptables -I FORWARD 1 -s $NETWORKS -d $NETWORKS -j ACCEPT
     /sbin/iptables -I FORWARD 2 -s $BASTION -d $NETWORKS -j ACCEPT
+{% for r in routed_networks %}
+{% if not r.net == hypervisor_net %}
+    /sbin/ip ro add {{ r.net }} via {{ r.gw }}
+{% endif %}
+{% endfor %}
 fi
 
 if [ "$2" == "stopped" -a "$3" == "end" -a "$OCP_BRIDGE" == "$BRIDGE" ] ; then
@@ -27,4 +32,9 @@ if [ "$2" == "stopped" -a "$3" == "end" -a "$OCP_BRIDGE" == "$BRIDGE" ] ; then
     /sbin/iptables -t nat -D POSTROUTING -s $BASTION -d $NETWORKS -j ACCEPT
     /sbin/iptables -D FORWARD -s $BASTION -d $NETWORKS -j ACCEPT
     /sbin/iptables -D FORWARD -s $NETWORKS -d $NETWORKS -j ACCEPT
+{% for r in routed_networks %}
+{% if not r.net == hypervisor_net %}
+    /sbin/ip ro del {{ r.net }} via {{ r.gw }}
+{% endif %}
+{% endfor %}
 fi

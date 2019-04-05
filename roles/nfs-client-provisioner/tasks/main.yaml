@@ -1,0 +1,44 @@
+---
+- name: "Get remote user home directoty"
+  user:
+    name: "{{ ansible_user }}"
+    state: present
+  register: user_info
+
+- set_fact:
+    kube_config: "{{ user_info.home }}/{{ openshift_cluster_name }}/auth/kubeconfig"
+
+- name: "Copy templates to master"
+  copy:
+    src: "{{ item }}"
+    dest: /tmp
+  with_items:
+  - cluster-wide.yaml
+  - nfs-client-provosioner.yaml
+
+- name: "Create NFS Client Based Provisioner Project"
+  shell: |
+    {{ oc_cmd }} --kubeconfig {{ kube_config }} project {{ nfs_provisioner_project }} || \
+    {{ oc_cmd }} --kubeconfig {{ kube_config }} new-project {{ nfs_provisioner_project }}
+
+- name: "Upload templates"
+  shell: |
+    {{ oc_cmd }} --kubeconfig {{ kube_config }} -n {{ nfs_provisioner_project }} create -f /tmp/{{ item }} || \
+    {{ oc_cmd }} --kubeconfig {{ kube_config }} -n {{ nfs_provisioner_project }} replace -f /tmp/{{ item }}
+  with_items:
+  - cluster-wide.yaml
+  - nfs-client-provosioner.yaml
+
+- name: "Create Clutser wide objects"
+  shell: |
+    {{ oc_cmd }} --kubeconfig {{ kube_config }} process nfs-client-provisioner-cluster-wide -p NAMESPACE={{ nfs_provisioner_project }} \
+    | {{ oc_cmd }} --kubeconfig {{ kube_config }} apply -f -
+
+- name: "Create NFS Provisioner Microservice"
+  shell: |
+    {{ oc_cmd }} --kubeconfig {{ kube_config }} process nfs-client-provisioner -p NFS_SERVER={{ nfs_server }} \
+    | {{ oc_cmd }} --kubeconfig {{ kube_config }} apply -f -
+
+- name: "Allow hostmount SCC for service account"
+  shell: |
+    {{ oc_cmd }} --kubeconfig {{ kube_config }} adm policy add-scc-to-user hostmount-anyuid -z nfs-client-provisioner

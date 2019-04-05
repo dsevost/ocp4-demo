@@ -39,13 +39,6 @@
     line: "listen_tcp = 1"
   notify: libvirtd_service
 
-#- name: "Enable libvirtd listener on all interfaces"
-#  lineinfile:
-#    path: "{{ libvirtd_conf }}"
-#    regex: "^listen_addr"
-#    line: 'listen_addr = "{{ libvirtd_listen_addr }}"'
-#  notify: libvirtd_service
-
 - name: "Disable libvirtd auth for incoming TCP connection"
   lineinfile:
     path: "{{ libvirtd_conf }}"
@@ -80,7 +73,7 @@
   notify:
   - apply_sysctl
 
-- name: "Manage Firewall Rules"
+- name: "Manage Firewall Rules for Libvirt"
   firewalld:
     source: "{{ real_network }}"
     port: 16509/tcp
@@ -115,6 +108,9 @@
   file:
     path: /etc/libvirt/hooks
     state: directory
+
+- set_fact:
+    hypervisor_net: "{{ hypervisor_cidr | ipaddr('network/prefix') }}"
 
 - name: "Install Libvirt Network hook"
   template:

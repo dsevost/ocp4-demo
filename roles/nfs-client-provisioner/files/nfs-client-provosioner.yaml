@@ -1,0 +1,53 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: nfs-client-provisioner
+  annotations:
+    description: "An NFS Client based provisioner template (Application)"
+objects:
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: nfs-client-provisioner
+- kind: Deployment
+  apiVersion: extensions/v1beta1
+  metadata:
+    name: nfs-client-provisioner
+  spec:
+    replicas: 1
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          app: nfs-client-provisioner
+      spec:
+        serviceAccountName: nfs-client-provisioner
+        containers:
+          - name: nfs-client-provisioner
+            image: ${NFS_PROVISIONER_IMAGE}
+            volumeMounts:
+              - name: nfs-client-root
+                mountPath: /persistentvolumes
+            env:
+              - name: PROVISIONER_NAME
+                value: ${PROVISIONER_NAME}
+              - name: NFS_SERVER
+                value: ${NFS_SERVER}
+              - name: NFS_PATH
+                value: ${NFS_SERVER_EXPORT_PATH}
+        volumes:
+          - name: nfs-client-root
+            nfs:
+              server: ${NFS_SERVER}
+              path: ${NFS_SERVER_EXPORT_PATH}
+parameters:
+- name: PROVISIONER_NAME
+  value: provosioner.io/nfs-client
+- name: NFS_SERVER
+  description: NFS Server IP Address
+  requred: true
+- name: NFS_SERVER_EXPORT_PATH
+  value: /var/export/ocp4
+- name: NFS_PROVISIONER_IMAGE
+  value: quay.io/external_storage/nfs-client-provisioner:latest

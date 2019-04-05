@@ -1,0 +1,39 @@
+---
+- name: "Install NFS server"
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+  - nfs-utils
+
+- name: "Manage Firewall Rules for NFS"
+  firewalld:
+    permanent: yes
+    service: "{{ item }}"
+    state: enabled
+  notify: firewalld_service
+  with_items:
+  - nfs
+  - rpc-bind
+
+- name: "Start NFS Server"
+  service:
+    name: nfs-server
+    enabled: true
+
+- name: "Copy Export File to NFS sever"
+  template:
+    src: openshift-dyn_pv.exports.j2
+    dest: /etc/exports.d/openshift-dyn_pv.exports
+  notify: nfsd_service
+
+- name: "Manage SELinux permission for NFS Export"
+  sefcontext:
+    target: '/var/export(/.*)?'
+    setype: nfs_t
+    state: present
+
+- name: "Create NFS Export"
+  file:
+    path: "/var/export/{{ openshift_cluster_name }}"
+    state: directory

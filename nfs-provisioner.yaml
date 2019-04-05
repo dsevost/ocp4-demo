@@ -1,0 +1,6 @@
+- hosts: bastion
+  gather_facts: yes
+  vars:
+    nfs_server: "{{ bastion_ip }}"
+  roles:
+  - nfs-client-provisioner

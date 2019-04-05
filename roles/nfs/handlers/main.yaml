@@ -1,0 +1,10 @@
+---
+- name: firewalld_service
+  service:
+    name: firewalld
+    state: reloaded
+
+- name: nfsd_service
+  service:
+    name: nfs-server
+    state: restarted
