@@ -1,0 +1,69 @@
+---
+- name: "Fetch current network definition from Libvirt"
+  virt_net:
+    name: "{{ vnet }}"
+    command: get_xml
+  register: vnet_xml
+
+- set_fact:
+    dns_host: "{{ hypervisor_cidr | ipaddr(51) | ipaddr('address') }}"
+    apps_domain: "apps.{{ openshift_cluster_name }}.{{ openshift_base_domain }}"
+
+- block:
+    fail:
+  when:
+  - 
+
+- name: "Remove DNS records for host {{ dns_host }}"
+  xml:
+    xmlstring: "{{ vnet_xml.get_xml }}"
+    xpath: /network/dns/host[@ip='{{ dns_host }}']
+    state: absent
+  register: subdomain_hosts_removed
+
+- name: "Add DNS forwarder for domain {{ apps_domain }}"
+  xml:
+    xmlstring: "{{ subdomain_hosts_removed.xmlstring }}"
+    xpath: /network/dns
+    add_children:
+    - forwarders:
+        domain: "{{ apps_domain }}"
+        addr: "127.0.0.1"
+  register: new_vnet
+
+- name: "Save VM interfaces for bridge '{{ hypervisor_bridge }}'"
+  shell: |
+    brctl show {{ hypervisor_bridge }} | grep -v "bridge\|ocp4-nic" | awk '{ print $1; }'
+  register: vifs
+
+- name: "Remove old network definition"
+  virt_net:
+    name: "{{ vnet }}"
+    state: absent
+
+- name: "Load new Libvirt network definition"
+  virt_net:
+    name: "{{ vnet }}"
+    command: define
+    xml: "{{ new_vnet.xmlstring }}"
+    state: present
+
+- name: "Set new network to autostarted"
+  virt_net:
+    name: "{{ vnet }}"
+    autostart: yes
+
+- name: "Start new network"
+  virt_net:
+    name: "{{ vnet }}"
+    command: create
+
+- name: "Restore VM interfaces at bridge '{{ hypervisor_bridge }}'"
+  shell: |
+    brctl addif {{ hypervisor_bridge }} {{ item }}
+  with_items:
+  - "{{ vifs.stdout_lines}}"
+
+#- copy:
+#    content: "{{ new_vnet.xmlstring }}"
+#    dest: /tmp/123.xml

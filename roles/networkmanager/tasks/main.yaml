@@ -1,19 +1,8 @@
 ---
-- set_fact:
-    infra_ip_merged: "{{ hypervisor_cidr | ipaddr(51) }}"
+#- include: initial.yaml
+#  when:
+#  - networknamager_configuration == 'initial'
 
-- name: "Forward local DNS to Libvirt Network"
-  copy:
-    content: |
-      server=/{{ openshift_cluster_name }}.{{ openshift_base_domain }}/{{ hypervisor_cidr | ipaddr('address')}}
-      address=/.apps.{{ openshift_cluster_name }}.{{ openshift_base_domain }}/{{ infra_ip_merged | ipaddr('address') }}
-    dest: /etc/NetworkManager/dnsmasq.d/openshift.conf
-  notify: networkmanager_service
-
-- name: "Configure NetworkManager to use dnsmasq"
-  copy:
-    content: |
-      [main]
-      dns=dnsmasq
-    dest: /etc/NetworkManager/conf.d/openshift.conf
-  notify: networkmanager_service
+- include: update.yaml
+  when:
+  - networknamager_configuration == 'update'

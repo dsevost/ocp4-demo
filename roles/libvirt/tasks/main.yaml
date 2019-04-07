@@ -17,6 +17,8 @@
   - libxml2
   - qemu-kvm
   - "{{ 'python3-firewall' if ansible_distribution == 'Fedora' else 'python-firewall' }}"
+  - "{{ 'python3-libvirt' if ansible_distribution == 'Fedora' else 'python-libvirt' }}"
+  - "{{ 'python3-lxml' if ansible_distribution == 'Fedora' else 'python-lxml' }}"
 
 - name: "Enable and start LibvirtD service"
   service:
@@ -60,7 +62,6 @@
     line: 'LIBVIRTD_ARGS="--listen"'
   notify: libvirtd_service
 
-
 - name: "Allow 'wheel' group manage Libvirt daemon"
   copy:
     src: 80-libvirt.rules
@@ -79,30 +80,44 @@
     port: 16509/tcp
     permanent: yes
     state: enabled
-  notify: firewalld_service
+  notify: 
+  - firewalld_service
 
-- name: "Check Libvirt pool"
-  environment:
-    LANG: "en_US"
-  changed_when: false
-  shell: |
-    virsh pool-list | grep default
-  register: pool_list
-  ignore_errors: true
+- name: "Create 'default' pool"
+  virt_pool:
+    command: define
+    name: default
+    xml: '{{ lookup("file", "files/libvirt-default-pool.xml") }}'
+    state: active
+    autostart: true
 
-#- debug: var=pool_list
+#- name: "Check Libvirt pool"
+#  environment:
+#    LANG: "en_US"
+#  changed_when: false
+#  shell: |
+#    virsh pool-list | grep default
+#  register: pool_list
+#  ignore_errors: true
 
-- block:
-  - name: "Copy pool definition"
-    copy:
-      src: libvirt-default-pool.xml
-      dest: /tmp
-  - name: "Create 'default' pool if needed"
-    shell: |
-      virsh pool-define /tmp/libvirt-default-pool.xml
-      virsh pool-start default
-  when:
-  - pool_list.stdout is not search('default.*active.*yes')
+##- debug: var=pool_list
+
+#- block:
+#  - name: "Copy pool definition"
+#    copy:
+#      src: libvirt-default-pool.xml
+#      dest: /tmp
+#  - name: "Create 'default' pool"
+#    shell: |
+#      virsh pool-define /tmp/libvirt-default-pool.xml
+#  - name: "Start 'default' pool"
+#    shell: |
+#      virsh pool-start default
+#  - name: "Set 'default' pool to autostart"
+#    shell: |
+#      virsh pool-autostart default
+#  when:
+#  - pool_list.stdout is not search('default.*active.*yes')
 
 - name: "Create Libvirtd Hooks Directory"
   file:

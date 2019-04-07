@@ -1,0 +1,51 @@
+---
+- name: "Install required packages"
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+  - dbus-tools
+
+- name: "Allow DNS request from external"
+  firewalld:
+    service: dns
+    state: enabled
+    immediate: yes
+    permanent: yes
+  notify: firewalld_service
+
+- set_fact:
+    infra_ip_merged: "{{ hypervisor_cidr | ipaddr(51) }}"
+
+- block:
+  - name: "Forward local DNS to Libvirt Network at Master Hypervisor"
+    copy:
+      content: |
+        strict-order
+        listen-address=127.0.0.1,{{ ansible_default_ipv4.address }}
+        server=/{{ openshift_cluster_name }}.{{ openshift_base_domain }}/{{ hypervisor_cidr | ipaddr('address')}}
+        address=/.apps.{{ openshift_cluster_name }}.{{ openshift_base_domain }}/{{ infra_ip_merged | ipaddr('address') }}
+      dest: "/etc/NetworkManager/dnsmasq.d/openshift-{{ openshift_cluster_name }}.conf"
+    notify: networkmanager_service
+  when:
+  - ansible_default_ipv4.address == groups['hypervisors'][0]
+
+- block:
+  - name: "Forward local DNS to Libvirt Network at additional hypervisors"
+    copy:
+      content: |
+        strict-order
+        listen-address=127.0.0.1,{{ ansible_default_ipv4.address }}
+        server=/{{ openshift_cluster_name }}.{{ openshift_base_domain }}/{{ groups['hypervisors'][0] }}
+      dest: "/etc/NetworkManager/dnsmasq.d/openshift-{{ openshift_cluster_name }}.conf"
+    notify: networkmanager_service
+  when:
+  - not ansible_default_ipv4.address == groups['hypervisors'][0]
+
+- name: "Configure NetworkManager to use dnsmasq"
+  copy:
+    content: |
+      [main]
+      dns=dnsmasq
+    dest: /etc/NetworkManager/conf.d/openshift.conf
+  notify: networkmanager_service

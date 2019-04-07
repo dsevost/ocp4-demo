@@ -3,3 +3,9 @@
   service:
     name: NetworkManager
     state: reloaded
+  ignore_errors: true
+
+- name: firewalld_service
+  service:
+    name: firewalld
+    state: reloaded

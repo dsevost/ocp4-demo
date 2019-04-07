@@ -29,6 +29,7 @@
       repo: "{{ openshift_installer_source_repo }}"
       dest: "{{ source_dir }}/src/github.com/openshift/installer"
       version: "{{ openshift_installer_source_ref }}"
+    register: git_pull
 
   - name: "Build OpenShift installer from source"
     environment:
@@ -38,6 +39,8 @@
       src/github.com/openshift/installer/hack/build.sh
     args:
       chdir: "{{ source_dir }}"
+    when:
+    - git_pull.changed
 
   - debug:
       msg: "Please run manually on remote host: {{ source_dir }}/src/github.com/openshift/installer/bin/openshift-install create install-config --dir={{ user_info.home }}/{{ openshift_cluster_name }}"

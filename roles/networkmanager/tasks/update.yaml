@@ -1,0 +1,12 @@
+---
+- name: "Get OCP4 Libvirt network Name"
+  virt_net:
+    command: list_nets
+  register: virt_net_list
+
+- include: update_loop.yaml
+  vars:
+    vnet: "{{ item }}"
+  with_items:
+  - ocp4-qmpc6
+#  - "{{ virt_net_list.list_nets }}"
