@@ -1,19 +1,16 @@
 #!/bin/bash
 
-#FILE=/tmp/network.log
+FILE=/tmp/network.log
 
 #echo "--- $(date) ----" >> ${FILE}
-#echo "ARGS: $*" >> ${FILE}
-#echo "ENV:" >> $FILE
-#env >> ${FILE}
-#echo "STDIN: " >> $FILE
-#cat - >> ${FILE}
 
-OCP_BRIDGE='{{ hypervisor_bridge }}'
-NETWORKS='{{ real_network }}'
-EXTERNAL_NET='{{ external_access }}'
+export OCP_BRIDGE='{{ hypervisor_bridge }}'
+export NETWORKS='{{ real_network }}'
+export EXTERNAL_NET='{{ external_access }}'
 
-BRIDGE=`xmllint --xpath 'string(/hookData/network/bridge/@name)' -`
+__STDOUT=$(cat -)
+
+export BRIDGE=`echo $__STDOUT | xmllint --xpath 'string(/hookData/network/bridge/@name)' -`
 
 if [ "$2" == "started" -a "$3" == "begin" -a "$OCP_BRIDGE" == "$BRIDGE" ] ; then
     /sbin/iptables -t nat -I POSTROUTING 1 -s $NETWORKS -d $NETWORKS -j ACCEPT
@@ -40,3 +37,9 @@ if [ "$2" == "stopped" -a "$3" == "end" -a "$OCP_BRIDGE" == "$BRIDGE" ] ; then
 {% endif %}
 {% endfor %}
 fi
+
+#echo "ARGS: $*" >> ${FILE}
+#echo "ENV:" >> $FILE
+#env >> ${FILE}
+#echo "STDIN: " >> $FILE
+#echo "__STDOUT: >> ${FILE}

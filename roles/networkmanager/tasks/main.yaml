@@ -1,7 +1,7 @@
 ---
-#- include: initial.yaml
-#  when:
-#  - networknamager_configuration == 'initial'
+- include: initial.yaml
+  when:
+  - networknamager_configuration == 'initial'
 
 - include: update.yaml
   when:

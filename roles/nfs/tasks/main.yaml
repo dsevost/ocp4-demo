@@ -37,3 +37,4 @@
   file:
     path: "/var/export/{{ openshift_cluster_name }}"
     state: directory
+    setype: nfs_t

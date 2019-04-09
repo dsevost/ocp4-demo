@@ -6,7 +6,7 @@ ansible_user=admin
 ansible_become=true
 ansible_python_interpreter=/usr/bin/python3
 openshift_cluster_name=ocp4
-openshift_base_domain=dsevosty.info
+openshift_base_domain=rh.test
 
 [bastion]
 192.168.88.97
@@ -21,4 +21,4 @@ openshift_base_domain=dsevosty.info
 hypervisor_bridge=ocp4
 real_network=192.168.124.0/22
 routed_networks=[ { 'net': '192.168.124.0/24', 'gw': '192.168.88.97' } ]
-external_access=172.16.0.0/14
+external_access=192.168.88.0/24
