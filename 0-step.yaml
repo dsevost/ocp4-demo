@@ -1,0 +1,3 @@
+---
+- import_playbook: .ssh_scan_hosts.yaml
+- import_playbook: .create_admin_user.yaml
