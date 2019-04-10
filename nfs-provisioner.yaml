@@ -1,6 +1,8 @@
+---
+#
+# based on https://github.com/kubernetes-incubator/external-storage/tree/master/nfs-client
+#
 - hosts: bastion
   gather_facts: yes
-  vars:
-    nfs_server: "{{ bastion_ip }}"
   roles:
-  - nfs-client-provisioner
+  - nfs_client_provisioner

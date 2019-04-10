@@ -1,3 +1,4 @@
 ---
 nfs_provisioner_project: nfs-provisioner
 oc_cmd: /usr/bin/oc
+storage_class_name: managed-nfs-storage

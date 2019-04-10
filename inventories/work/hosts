@@ -9,10 +9,10 @@ openshift_cluster_name=ocp4
 openshift_base_domain=rh.test
 
 [bastion]
-192.168.88.97
+192.168.88.97 nfs_server=192.168.88.97 default_storage_class=yes
 
 [nfs]
-192.168.88.97 nfs_server=192.168.88.97
+192.168.88.97 
 
 [hypervisors]
 192.168.88.97 hypervisor_cidr=192.168.124.1/24

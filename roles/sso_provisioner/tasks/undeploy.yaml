@@ -1,0 +1,4 @@
+---
+- name: "Remove SSO project '{{ sso_project }}'"
+  shell: |
+    {{ oc_adm }} delete project {{ sso_project }}

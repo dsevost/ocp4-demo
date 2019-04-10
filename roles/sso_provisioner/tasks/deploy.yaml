@@ -1,0 +1,46 @@
+---
+- name: "Ensure SSO project exists"
+  shell: |
+    {{ oc_adm }} get project {{ sso_project }}
+  register: sso_project_get
+  ignore_errors: true
+  no_log: true
+
+- fail:
+    msg: "SSO Project '{{ sso_project }}' already exists, please remove it first by tun the same script with '-e sso_deploy_action=undeploy'"
+  when:
+  - sso_project_get.failed == False
+
+- block:
+  - name: "Create SSO project {{ sso_project }}"
+    shell: |
+      {{ oc_adm }} new-project {{ sso_project }}
+
+  - name: "Upload SSO Image Stream and Template into project {{ sso_project }}"
+    args:
+      warn: false
+    shell: |
+      curl -L {{ item }} | sed 's/registry.redhat.io/registry.access.redhat.com/g' | \
+      {{ oc_adm }} -n {{ sso_project }} create -f -
+    with_items:
+    - "{{ sso_image_uri }}"
+    - "{{ sso_template_uri }}"
+
+  - name: "Upload DB Image Streams"
+    shell: |
+      {{ oc_adm }} -n openshift get -o yaml --export is {{ item }} | sed 's/registry.redhat.io/registry.access.redhat.com/g' | \
+      {{ oc_adm }} -n {{ sso_project }} create -f -
+    with_items:
+    - mysql
+    - postgresql
+
+  - name: "Deploy SSO Application"
+    shell: |
+      {{ oc_adm }} -n {{ sso_project }} new-app {{ sso_template_uri }} \
+        -p APPLICATION_NAME={{ sso_app_name }} \
+        -p IMAGE_STREAM_NAMESPACE={{ sso_project }} \
+        -p SSO_ADMIN_PASSWORD={{ sso_admin_password }} \
+        -p SSO_ADMIN_USERNAME={{ sso_admin_user }}
+
+  when:
+  - sso_project_get.failed

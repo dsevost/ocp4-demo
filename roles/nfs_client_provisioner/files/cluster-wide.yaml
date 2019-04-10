@@ -61,9 +61,7 @@ objects:
 - apiVersion: storage.k8s.io/v1
   kind: StorageClass
   metadata:
-    name: managed-nfs-storage
-    annotations:
-      storageclass.kubernetes.io/is-default-class: true
+    name: ${STORAGE_CLASS_NAME}
   provisioner: ${PROVISIONER_NAME}
   parameters:
     archiveOnDelete: "false"
@@ -73,3 +71,6 @@ parameters:
   description: An namespaces where NFS Client based provisioner runs
 - name: PROVISIONER_NAME
   value: provosioner.io/nfs-client
+- name: STORAGE_CLASS_NAME
+  description: Storage class name
+  value: managed-nfs-storage

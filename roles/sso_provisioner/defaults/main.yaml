@@ -1,0 +1,14 @@
+oc_cmd: /usr/bin/oc
+
+sso_deploy_action: deploy
+
+sso_source_ref: https://raw.githubusercontent.com/jboss-container-images/redhat-sso-7-openshift-image/sso73-dev/templates
+sso_image_name: sso73-image-stream.json
+sso_image_uri: "{{ sso_source_ref }}/{{ sso_image_name }}"
+sso_template_name: sso73-x509-postgresql-persistent.json
+sso_template_uri: "{{ sso_source_ref }}/{{ sso_template_name }}"
+
+sso_project: rhsso-openshift-auth
+sso_app_name: system-sso
+sso_admin_user: admin
+sso_admin_password: redhat

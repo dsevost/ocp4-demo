@@ -8,5 +8,4 @@
   vars:
     vnet: "{{ item }}"
   with_items:
-  - ocp4-qmpc6
-#  - "{{ virt_net_list.list_nets }}"
+  - "{{ virt_net_list.list_nets }}"

@@ -15,9 +15,11 @@ export BRIDGE=`echo $__STDOUT | xmllint --xpath 'string(/hookData/network/bridge
 if [ "$2" == "started" -a "$3" == "begin" -a "$OCP_BRIDGE" == "$BRIDGE" ] ; then
     /sbin/iptables -t nat -I POSTROUTING 1 -s $NETWORKS -d $NETWORKS -j ACCEPT
     /sbin/iptables -t nat -I POSTROUTING 2 -s $EXTERNAL_NET -d $NETWORKS -j ACCEPT
+    /sbin/iptables -t nat -I POSTROUTING 3 -s $NETWORKS -p tcp -m multiport --sport=80,442,6443 -j ACCEPT
     /sbin/iptables -I FORWARD 1 -s $NETWORKS -d $NETWORKS -j ACCEPT
     /sbin/iptables -I FORWARD 2 -s $EXTERNAL_NET -d $NETWORKS -j ACCEPT
-    /sbin/iptables -I FORWARD 3 -d $NETWORKS -j ACCEPT
+#    /sbin/iptables -I FORWARD 3 -d $NETWORKS -j ACCEPT
+    /sbin/iptables -I FORWARD 3 -d $NETWORKS -p tcp -m multiport --sport=80,442,6443 -j ACCEPT
 {% for r in routed_networks %}
 {% if not r.net == hypervisor_net %}
     /sbin/ip ro add {{ r.net }} via {{ r.gw }}
@@ -28,9 +30,11 @@ fi
 if [ "$2" == "stopped" -a "$3" == "end" -a "$OCP_BRIDGE" == "$BRIDGE" ] ; then
     /sbin/iptables -t nat -D POSTROUTING -s $NETWORKS -d $NETWORKS -j ACCEPT
     /sbin/iptables -t nat -D POSTROUTING -s $EXTERNAL_NET -d $NETWORKS -j ACCEPT
+    /sbin/iptables -t nat -D POSTROUTING -s $NETWORKS -p tcp -m multiport --sport=80,442,6443 -j ACCEPT
     /sbin/iptables -D FORWARD -s $EXTERNAL_NET -d $NETWORKS -j ACCEPT
     /sbin/iptables -D FORWARD -s $NETWORKS -d $NETWORKS -j ACCEPT
-    /sbin/iptables -D FORWARD -d $NETWORKS -j ACCEPT
+#    /sbin/iptables -D FORWARD -d $NETWORKS -j ACCEPT
+    /sbin/iptables -D FORWARD -d $NETWORKS -p tcp -m multiport --sport=80,442,6443 -j ACCEPT
 {% for r in routed_networks %}
 {% if not r.net == hypervisor_net %}
     /sbin/ip ro del {{ r.net }} via {{ r.gw }}
