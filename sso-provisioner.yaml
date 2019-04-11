@@ -1,7 +1,5 @@
 ---
 - hosts: bastion
   gather_facts: yes
-#  vars:
-#    nfs_server: "{{  }}"
   roles:
   - sso_provisioner

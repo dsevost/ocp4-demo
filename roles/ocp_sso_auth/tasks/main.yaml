@@ -1,0 +1,76 @@
+---
+- fail:
+    msg: "please run the playbook with option '-e sso_ca_path=path_to_sso_ca.crt.pem'"
+  when:
+  - sso_ca_path is not defined
+
+- fail:
+    msg: "please run the playbook with option '-e sso_client_secret=content_of_openid_client_secret'"
+  when:
+  - sso_client_secret is not defined
+
+- name: "Get remote user home directoty"
+  user:
+    name: "{{ ansible_user }}"
+    state: present
+  register: user_info
+
+- set_fact:
+    kube_config: "{{ user_info.home }}/{{ openshift_cluster_name }}/auth/kubeconfig"
+
+- set_fact:
+    oc_adm: "{{ oc_cmd }} --kubeconfig {{ kube_config }}"
+
+
+- name: "Create SSO Secret"
+  shell: |
+    {{ oc_adm }} -n openshift-config create secret generic {{ sso_secret_name }} --from-literal=clientSecret={{ sso_client_secret }} -o json --dry-run
+  register: sso_secret_content
+
+- name: "Save SSO Secret to temporary file"
+  copy:
+    content: |
+      {{ sso_secret_content.stdout }}
+    dest: /tmp/sso_secret.json
+
+- name: "Upload Secret into OpenShift"
+  shell: |
+    {{ oc_adm }} apply -f /tmp/sso_secret.json
+
+- name: "Copy SSO CA"
+  copy:
+    src: "{{ sso_ca_path }}"
+    dest: /tmp/sso_ca.crt.pem
+
+- name: "Create SSO CA Configmap"
+  shell: |
+    {{ oc_adm }} -n openshift-config create configmap {{ sso_cm_name }} --from-file=ca.crt=/tmp/sso_ca.crt.pem -o json --dry-run
+  register: sso_cm_content
+
+- name: "Save SSO CA Configmap to temporary file"
+  copy:
+    content: |
+      {{ sso_cm_content.stdout }}
+    dest: /tmp/sso_cm_ca.json
+
+- name: "Upload SSO CA Configmap into OpenShift"
+  shell: |
+    {{ oc_adm }} apply -f /tmp/sso_cm_ca.json
+
+- name: "Copy SSO OAuth template"
+  template:
+    src: rh-sso-idp.yaml.j2
+    dest: /tmp/rh-sso-idp.yaml
+
+- name: "Upload SSO OAuth into OpenShift"
+  shell: |
+    {{ oc_adm }} apply -f /tmp/rh-sso-idp.yaml
+
+- name: "Patch Logout URL"
+  shell: |
+    {{ oc_adm }} patch console/cluster --type=merge -p '
+      { "spec": 
+        { "authentication": 
+          { "logoutRedirect" : 
+               "https://{{ sso_auth_host_name }}/auth/realms/{{ sso_realm }}/protocol/openid-connect/logout?redirect_uri=https%3A%2F%2Fconsole-openshift-console.{{ openshift_apps_domain }}.{{ openshift_cluster_name }}.{{ openshift_base_domain }}"
+      } } }'

@@ -1,0 +1,5 @@
+---
+- hosts: bastion
+  gather_facts: yes
+  roles:
+  - ocp_sso_auth

@@ -1,0 +1,35 @@
+apiVersion: config.openshift.io/v1
+kind: OAuth
+metadata:
+  name: cluster
+spec:
+  identityProviders:
+  - name: {{ idp_name }}
+    challenge: false
+    login: true
+    mappingMethod: claim
+    type: OpenID
+    openID:
+      clientID: {{ sso_client_name }}
+      clientSecret:
+        name: {{ sso_secret_name }}
+#      ca:
+#        name: {{ sso_cm_name }}
+      extraScopes:
+      - email
+      - profile
+      extraAuthorizeParameters:
+        include_granted_scopes: "true"
+      claims:
+        preferredUsername:
+        - preferred_username
+        - email
+        name:
+        - full_name
+        - name
+        email:
+        - email
+      urls:
+        authorize: https://{{ sso_auth_host_name }}/auth/realms/{{ sso_realm }}/protocol/openid-connect/auth
+        token: https://{{ sso_auth_host_name }}/auth/realms/{{ sso_realm }}/protocol/openid-connect/token
+        userInfo: https://{{ sso_auth_host_name }}/auth/realms/{{ sso_realm }}/protocol/openid-connect/userinfo

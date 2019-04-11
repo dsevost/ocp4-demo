@@ -1,0 +1,22 @@
+oc_cmd: /usr/bin/oc
+
+sso_project: rhsso-openshift-auth
+sso_app_name: system-sso
+sso_realm: openshift
+sso_client_name: openshift
+#sso_client_secret: change_me
+sso_secret_name: rh-sso-openid
+sso_cm_name: rh-sso-ca
+
+openshift_apps_domain: apps
+openshift_base_domain: tt.testing
+openshift_cluster_name: ocp4
+
+idp_name: RH-SSO
+
+sso_auth_host_name: "{{ sso_app_name }}-{{ sso_project }}.{{ openshift_apps_domain }}.{{ openshift_cluster_name }}.{{ openshift_base_domain }}"
+
+idm_base_dn: dc=rh,dc=test
+idm_bind_user: "uid=ocp-sa-cis-proxy,cn=users,cn=accounts,{{ idm_base_dn }}"
+idm_bind_password: change_me
+idm_full_uri: "ldap://idm.rh.test/{{ idm_base_dn }}?uid?sub?(memberOf=cn=ocp-sa-cis-group,cn=groups,cn=accounts,{{ idm_base_dn }})"

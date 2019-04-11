@@ -1,2 +1,4 @@
 *.retry
 nm.yaml
+*.crt
+*.pem

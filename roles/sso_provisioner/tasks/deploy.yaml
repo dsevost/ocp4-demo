@@ -40,7 +40,8 @@
         -p APPLICATION_NAME={{ sso_app_name }} \
         -p IMAGE_STREAM_NAMESPACE={{ sso_project }} \
         -p SSO_ADMIN_PASSWORD={{ sso_admin_password }} \
-        -p SSO_ADMIN_USERNAME={{ sso_admin_user }}
+        -p SSO_ADMIN_USERNAME={{ sso_admin_user }} \
+        -p SSO_REALM={{ sso_realm }}
 
   when:
   - sso_project_get.failed

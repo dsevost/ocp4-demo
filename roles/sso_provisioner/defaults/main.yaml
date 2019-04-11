@@ -12,3 +12,4 @@ sso_project: rhsso-openshift-auth
 sso_app_name: system-sso
 sso_admin_user: admin
 sso_admin_password: redhat
+sso_realm: openshift
