@@ -31,12 +31,12 @@
 
 - name: "Create Clutser wide objects"
   shell: |
-    {{ oc_adm }} process nfs-client-provisioner-cluster-wide -p NAMESPACE={{ nfs_provisioner_project }} \
+    {{ oc_adm }} process nfs-client-provisioner-cluster-wide -p NAMESPACE={{ nfs_provisioner_project }} -p STORAGE_CLASS_NAME={{ storage_class_name }} \
     | {{ oc_adm }} apply -f -
 
 - name: "Create NFS Provisioner Microservice"
   shell: |
-    {{ oc_adm }} process nfs-client-provisioner -p NFS_SERVER={{ nfs_server }} -p STORAGE_CLASS_NAME={{ storage_class_name }} \
+    {{ oc_adm }} process nfs-client-provisioner -p NFS_SERVER={{ nfs_server }} \
     | {{ oc_adm }} apply -f -
 
 - name: "Allow hostmount SCC for service account"

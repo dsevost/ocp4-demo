@@ -2,3 +2,5 @@
 nfs_provisioner_project: nfs-provisioner
 oc_cmd: /usr/bin/oc
 storage_class_name: managed-nfs-storage
+default_storage_class: false
+nfs_server: "{{ ansible_default_ipv4.address }}"
