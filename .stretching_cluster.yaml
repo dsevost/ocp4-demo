@@ -1,0 +1,59 @@
+---
+- hosts: bastion
+  gather_facts: yes
+  vars:
+   networknamager_configuration: 'update'
+  roles:
+  - networkmanager
+
+- hosts: hypervisors
+  gather_facts: yes
+  tasks:
+  - block:
+    - name: "Copy network definition to hypervisor"
+      copy: 
+        src: /tmp/__ocp4.xml
+        dest: /tmp
+    - name: "Load network definition"
+      set_fact:
+        vnet: "{{ lookup('file', '/tmp/__ocp4.xml') }}"
+#    - debug: var=vnet
+    - name: "Get network name"
+      xml:
+        xmlstring: "{{ vnet }}"
+        xpath: /network/name
+        content: text
+      register: vname
+    - set_fact:
+        vnet_name: "{{ vname.matches[0].name }}"
+    - name: "Change network bridge ip"
+      xml:
+        xmlstring: "{{ vnet }}"
+        xpath: /network/ip
+        attribute: address
+        value: "{{ hypervisor_cidr | ipaddr('address') }}"
+      register: new_vnet
+#    - debug: var=new_vnet
+    - name: "Stop network if needed"
+      virt_net:
+        command: destroy
+        name: "{{ vnet_name }}"
+      ignore_errors: true
+    - name: "Remove network definition if needed"
+      virt_net:
+        command: undefine
+        name: "{{ vnet_name }}"
+      ignore_errors: true
+    - virt_net:
+        command: define
+        name: "{{ vnet_name }}"
+        xml: '{{ new_vnet.xmlstring }}'
+        state: present
+    - virt_net:
+        name: "{{ vnet_name }}"
+        autostart: yes
+    - virt_net:
+        name: "{{ vnet_name }}"
+        command: create
+    when:
+    - ansible_default_ipv4.address != groups['hypervisors'][0]
