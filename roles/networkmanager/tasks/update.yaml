@@ -4,8 +4,14 @@
     command: list_nets
   register: virt_net_list
 
+#- debug: var=virt_net_list
+#- fail: msg=stop
+
 - include: update_loop.yaml
-  vars:
-    vnet: "{{ item }}"
-  with_items:
-  - "{{ virt_net_list.list_nets }}"
+  loop: "{{ virt_net_list.list_nets }}"
+  loop_control:
+    loop_var: vnet
+#  vars:
+#    vnet: "{{ item }}"
+#  with_items:
+#  - "{{ virt_net_list.list_nets }}"

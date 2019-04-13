@@ -1,69 +1,115 @@
 ---
-- name: "Fetch current network definition from Libvirt"
+- name: "Processing Libvirt network '{{ vnet }}'"
   virt_net:
     name: "{{ vnet }}"
     command: get_xml
   register: vnet_xml
 
 - set_fact:
-    dns_host: "{{ hypervisor_cidr | ipaddr(51) | ipaddr('address') }}"
     apps_domain: "apps.{{ openshift_cluster_name }}.{{ openshift_base_domain }}"
+    hypervisor_ip: "{{ hypervisor_cidr | ipaddr('address') }}"
+    dns_host: "{{ hypervisor_cidr | ipaddr(51) | ipaddr('address') }}"
 
-- block:
-    fail:
-  when:
-  - 
-
-- name: "Remove DNS records for host {{ dns_host }}"
+- name: "Libvirt Network Name"
   xml:
     xmlstring: "{{ vnet_xml.get_xml }}"
-    xpath: /network/dns/host[@ip='{{ dns_host }}']
-    state: absent
-  register: subdomain_hosts_removed
+    xpath: /network/name
+    content: text
+  register: network_name
 
-- name: "Add DNS forwarder for domain {{ apps_domain }}"
-  xml:
-    xmlstring: "{{ subdomain_hosts_removed.xmlstring }}"
-    xpath: /network/dns
-    add_children:
-    - forwarders:
-        domain: "{{ apps_domain }}"
-        addr: "127.0.0.1"
-  register: new_vnet
+#- debug: var=network_name.matches[0].name
+#  when:
+#  - network_name.matches[0].name is defined
+#  - network_name.matches[0].name is search(hypervisor_bridge)
+#  - groups['hypervisors'][0] = ansible_default_ipv4.address
+#- fail: msg=stop
+- block:
+  - name: "Remove DNS records for host {{ dns_host }}"
+    xml:
+      xmlstring: "{{ vnet_xml.get_xml }}"
+      xpath: /network/dns/host[@ip='{{ dns_host }}'] | /network/dns/forwarder
+      state: absent
+    register: subdomain_hosts_removed
 
-- name: "Save VM interfaces for bridge '{{ hypervisor_bridge }}'"
-  shell: |
-    brctl show {{ hypervisor_bridge }} | grep -v "bridge\|ocp4-nic" | awk '{ print $1; }'
-  register: vifs
+  - name: "Add DNS forwarder for domain {{ apps_domain }}"
+    xml:
+      xmlstring: "{{ subdomain_hosts_removed.xmlstring }}"
+      xpath: /network/dns
+      add_children:
+      - forwarder:
+          domain: "{{ apps_domain }}"
+          addr: "127.0.0.1"
+    register: new_vnet
 
-- name: "Remove old network definition"
-  virt_net:
-    name: "{{ vnet }}"
-    state: absent
+  - name: "Remove network UUID, MAC, DHCP elements"
+    xml:
+      xmlstring: "{{ new_vnet.xmlstring }}"
+      xpath: /network/uuid | /network/mac | /network/ip/dhcp
+      state: absent
+    register: vnet_cleared
 
-- name: "Load new Libvirt network definition"
-  virt_net:
-    name: "{{ vnet }}"
-    command: define
-    xml: "{{ new_vnet.xmlstring }}"
-    state: present
+#  - name: "Change network cidr attribute"
+#    xml:
+#      xmlstring: "{{ vnet_cleared.xmlstring }}"
+#      xpath: /network
+#      attribute: ip
+#      value: "{{ hypervisor_ip }}"
+#    register: vnet_other_hypervisor
+  - name: "Store network definition"
+    copy:
+      content: "{{ vnet_cleared.xmlstring }}"
+      dest: "/tmp/__ocp4.xml"
+  - fetch:
+      src: "/tmp/__ocp4.xml"
+      dest: /tmp/
+      flat: yes
 
-- name: "Set new network to autostarted"
-  virt_net:
-    name: "{{ vnet }}"
-    autostart: yes
+#  - debug: var=vnet_cleared
+#  - fail:
 
-- name: "Start new network"
-  virt_net:
-    name: "{{ vnet }}"
-    command: create
+  - name: "Save VM interfaces for bridge '{{ hypervisor_bridge }}'"
+    shell: |
+      brctl show {{ hypervisor_bridge }} | grep -v "bridge\|ocp4-nic" | awk '{ print $1; }'
+    register: vifs
+#  - debug: var=vifs
 
-- name: "Restore VM interfaces at bridge '{{ hypervisor_bridge }}'"
-  shell: |
-    brctl addif {{ hypervisor_bridge }} {{ item }}
-  with_items:
-  - "{{ vifs.stdout_lines}}"
+  - name: "Stop old network definition"
+    virt_net:
+      name: "{{ vnet }}"
+      state: inactive
 
-#- copy:
-#    content: "{{ new_vnet.xmlstring }}"
-#    dest: /tmp/123.xml
+  - name: "Remove old network definition"
+    virt_net:
+      name: "{{ vnet }}"
+      state: absent
+
+  - name: "Load new Libvirt network definition"
+    virt_net:
+      name: "{{ vnet }}"
+      command: define
+      xml: "{{ new_vnet.xmlstring }}"
+      state: present
+
+  - name: "Set new network to autostarted"
+    virt_net:
+      name: "{{ vnet }}"
+      autostart: yes
+
+  - name: "Start new network"
+    virt_net:
+      name: "{{ vnet }}"
+      command: create
+
+  - name: "Restore VM interfaces at bridge '{{ hypervisor_bridge }}'"
+    shell: |
+      brctl addif {{ hypervisor_bridge }} {{ item }}
+    with_items: "{{ vifs.stdout_lines }}"
+
+#  - copy:
+#      content: "{{ new_vnet.xmlstring }}"
+#      dest: /tmp/123.xml
+  when:
+  - network_name.matches[0].name is defined
+  - network_name.matches[0].name is search(hypervisor_bridge)
+  - groups['hypervisors'][0] == ansible_default_ipv4.address
+
