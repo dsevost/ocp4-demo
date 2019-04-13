@@ -13,8 +13,8 @@ spec:
       clientID: {{ sso_client_name }}
       clientSecret:
         name: {{ sso_secret_name }}
-#      ca:
-#        name: {{ sso_cm_name }}
+      ca:
+        name: {{ sso_cm_name }}
       extraScopes:
       - email
       - profile
