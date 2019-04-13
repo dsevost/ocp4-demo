@@ -9,12 +9,12 @@
 5. Runs OpenShift Installer with 'create' option
 6. On final step of installation add dns record at LibvirtD network definition for host 'openshift-authentication-openshift-authentication.apps.<domain.tld>'
 
-## Performing Cluster stratching (libvirt)
+## Performing Cluster stretching (libvirt)
 
-## Performing installation proceddure with Ansible'd playbooks
+## Performing installation procedure with Ansible's playbooks
 
 0. Prepare your ansible controller
-``` 
+```
 vi inventories/work/hosts
 ansible-playbook -i inventories/work/hosts 0-step
 ```
