@@ -63,6 +63,10 @@ objects:
   metadata:
     name: ${STORAGE_CLASS_NAME}
   provisioner: ${PROVISIONER_NAME}
+  mountOptions:
+  - rsize=1048576
+  - wsize=1048576
+  - vers=4
   parameters:
     archiveOnDelete: "false"
 parameters:
