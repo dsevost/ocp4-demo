@@ -2,7 +2,7 @@
 
 ## Performing basic installation (libvirt)
 
-1. Configure LibvirtD, NetworkManager, FirewallD according doc (https://github.com/openshift/installer/blob/master/docs/dev/libvirt-howto.md)
+1. Configure LibvirtD, NetworkManager, FirewallD according doc (https://github.com/openshift/installer/blob/master/docs/dev/libvirt/README.md)
 2. Build OpenShift Installer with LibvirtD support
 3. Run OpenShift Installer with 'install-config' option
 4. Fix LibvirtD Hypervisor's Network as you want (addressing, bridge name), masters and workers count
